@@ -1,4 +1,4 @@
-use std::io::{self, Write};
+use std::io;
 
 fn main() -> io::Result<()> {
 	let result = App::default().run();
@@ -39,7 +39,7 @@ impl App {
 						break;
 					}
 				}
-				_ => {}
+				Mode::Edit => self.handle_edit(&input),
 			}
 		}
 
@@ -48,7 +48,32 @@ impl App {
 
 	fn handle_cmd(&mut self, input: &str) -> bool {
 		match input {
-			"q" => true,
+			"q" => {
+				if self.modified_buffer {
+					println!("?");
+					// Next line is for the force quit functionality. If the buffer is not saved
+					// user must quit twice.
+					self.modified_buffer = false;
+					false
+				} else {
+					true
+				}
+			}
+			"a" => {
+				self.mode = Mode::Edit;
+				false
+			}
+			"l" => {
+				if self.buffer.len() == 0 {
+					println!("?");
+				} else {
+					for line in &self.buffer {
+						println!("{}", line);
+					}
+				}
+
+				false
+			}
 			_ => {
 				println!("?");
 				false
@@ -56,5 +81,13 @@ impl App {
 		}
 	}
 
-	fn handle_edit() {}
+	fn handle_edit(&mut self, input: &str) {
+		if input == "." {
+			self.mode = Mode::Cmd;
+		} else {
+			self.buffer.push(input.to_string());
+			self.caret_address = self.buffer.len();
+			self.modified_buffer = true;
+		}
+	}
 }
