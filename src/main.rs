@@ -1,4 +1,4 @@
-use std::io;
+use std::{fs, io, path::Path};
 
 fn main() -> io::Result<()> {
 	let result = App::default().run();
@@ -47,6 +47,10 @@ impl App {
 	}
 
 	fn handle_cmd(&mut self, input: &str) -> bool {
+		if let Some(filename) = input.strip_prefix("w ") {
+			return self.write_cmd(filename);
+		}
+
 		let cmd_char = input.chars().last().unwrap_or(' ');
 		let range = &input[..input.len().saturating_sub(1)];
 
@@ -62,7 +66,6 @@ impl App {
 			'a' => self.append_cmd(),
 			'l' => self.list_cmd(start, stop),
 			'd' => self.delete_cmd(start, stop),
-			'w' => self.write_cmd(),
 			_ => self.unnknown_cmd(),
 		}
 	}
@@ -114,7 +117,28 @@ impl App {
 		false
 	}
 
-	fn write_cmd(&mut self) -> bool {
+	fn write_cmd(&mut self, filename: &str) -> bool {
+		let safe_filename: String = filename
+			.trim()
+			.chars()
+			.filter(|&c| "_-. ".contains(c) || c.is_alphanumeric())
+			.take(255)
+			.collect();
+
+		let path = Path::new(&safe_filename);
+
+		if path.components().count() != 1 {
+			println!("?");
+			return false;
+		}
+
+		fs::File::options()
+			.write(true)
+			.create_new(true)
+			.open(path)
+			.expect("?");
+		fs::write(path, self.buffer.join("\n")).expect("");
+
 		false
 	}
 
