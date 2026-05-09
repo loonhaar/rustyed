@@ -58,57 +58,69 @@ impl App {
 		let stop: usize = stop_str.parse().unwrap_or(start);
 
 		match cmd_char {
-			'q' => {
-				if self.modified_buffer {
-					println!("?");
-					// Next line is for the force quit functionality. If the buffer is not saved
-					// user must quit twice.
-					self.modified_buffer = false;
-					false
-				} else {
-					true
-				}
-			}
-			'a' => {
-				self.mode = Mode::Edit;
-				false
-			}
-			'l' => {
-				if start > 0 && stop <= self.buffer.len() && start <= stop {
-					for i in (start - 1)..stop {
-						println!("{}$", self.buffer[i]);
-					}
-					self.current_address = stop;
-				} else {
-					println!("?");
-				}
-
-				false
-			}
-			'd' => {
-				if start > 0 && stop <= self.buffer.len() && start <= stop {
-					self.buffer.drain((start - 1)..stop);
-					self.current_address = if self.buffer.is_empty() {
-						0
-					} else {
-						start.min(self.buffer.len())
-					};
-					self.modified_buffer = true;
-				} else {
-					println!("?");
-					return false;
-				}
-
-				false
-			}
-			'w' => {
-
-			}
-			_ => {
-				println!("?");
-				false
-			}
+			'q' => self.quit_cmd(),
+			'a' => self.append_cmd(),
+			'l' => self.list_cmd(start, stop),
+			'd' => self.delete_cmd(start, stop),
+			'w' => self.write_cmd(),
+			_ => self.unnknown_cmd(),
 		}
+	}
+
+	fn quit_cmd(&mut self) -> bool {
+		if self.modified_buffer {
+			println!("?");
+			// Next line is for the force quit functionality. If the buffer is not saved
+			// user must quit twice.
+			self.modified_buffer = false;
+			false
+		} else {
+			true
+		}
+	}
+
+	fn append_cmd(&mut self) -> bool {
+		self.mode = Mode::Edit;
+		false
+	}
+
+	fn list_cmd(&mut self, start: usize, stop: usize) -> bool {
+		if start > 0 && stop <= self.buffer.len() && start <= stop {
+			for i in (start - 1)..stop {
+				println!("{}$", self.buffer[i]);
+			}
+			self.current_address = stop;
+		} else {
+			println!("?");
+		}
+
+		false
+	}
+
+	fn delete_cmd(&mut self, start: usize, stop: usize) -> bool {
+		if start > 0 && stop <= self.buffer.len() && start <= stop {
+			self.buffer.drain((start - 1)..stop);
+			self.current_address = if self.buffer.is_empty() {
+				0
+			} else {
+				start.min(self.buffer.len())
+			};
+			self.modified_buffer = true;
+		} else {
+			println!("?");
+			return false;
+		}
+
+		false
+	}
+
+	fn write_cmd(&mut self) -> bool {
+		false
+	}
+
+	fn unnknown_cmd(&mut self) -> bool {
+		println!("?");
+		false
 	}
 
 	fn handle_edit(&mut self, input: &str) {
