@@ -147,7 +147,7 @@ impl App {
 				println!("?");
 			});
 
-		self.modified_buffer = true;
+		self.modified_buffer = false;
 		false
 	}
 
