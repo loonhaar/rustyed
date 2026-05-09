@@ -118,27 +118,36 @@ impl App {
 	}
 
 	fn write_cmd(&mut self, filename: &str) -> bool {
-		let safe_filename: String = filename
-			.trim()
+		let grimey_name = filename
 			.chars()
-			.filter(|&c| "_-. ".contains(c) || c.is_alphanumeric())
-			.take(255)
-			.collect();
+			.any(|c| !c.is_alphanumeric() && !"_-. ".contains(c));
 
-		let path = Path::new(&safe_filename);
+		if grimey_name || filename.is_empty() || filename.len() > 255 {
+			println!("?");
+			return false;
+		}
+
+		let path = Path::new(filename);
 
 		if path.components().count() != 1 {
 			println!("?");
 			return false;
 		}
 
-		fs::File::options()
+		let _ = fs::File::options()
 			.write(true)
 			.create_new(true)
 			.open(path)
-			.expect("?");
-		fs::write(path, self.buffer.join("\n")).expect("");
+			.map(|_| {
+				if fs::write(path, self.buffer.join("\n")).is_err() {
+					println!("?");
+				}
+			})
+			.unwrap_or_else(|_| {
+				println!("?");
+			});
 
+		self.modified_buffer = true;
 		false
 	}
 
